@@ -2,29 +2,24 @@
 #include <stdlib.h>
 #include <GL/glut.h>
 #include <math.h>
-#include <random>
-#include <time.h>
 #include<iostream>
 
 #define janela_altura  800
 #define janela_largura 800
-float rotacao = 1;
-float zoom = 1;
-float direcaoX = 0, direcaoY = 0, velocidadebola = 10, pontaxPkb = -20, pontayPkb = -20;
+float rotacao = 1,zoom = 1;;
+bool shoot = false;
+int t = 0, ciclo=0;
+
+float player_posX = 0, player_posY = 20, player_speed = 10, posicao_relativa=0;
 int translMapa = 0;
-float tx = 0.0, ty = 0.0, xStep = 4, yStep = 4, raiox = 20, raioy = 25;
 int distanciaMapa = -400;
-int ciclo = 0;
 int x[10]{ 20, 100, 300, 150, 250, 100, 30, 300, 200, 350 };
-
-
-
-
-void tela(GLsizei w, GLsizei h);
+int xy_Shoot[2]= {0,0};
+bool rota = false;
+void reshape(GLsizei w, GLsizei h);
 void keyboard();
 void display(void);
-
-void anima(int valor);
+void desenhar();
 void colisao();
 
 class Inimigos {
@@ -185,222 +180,284 @@ public:
 
 int main(int argc, char** argv)
 {
-
     glutInit(&argc, argv);  // controla se o sistema operacional tem suporte a janelas.
-
-    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);  // quantidade de buffer de cores e que o padrao de cores é RGB ou RGBA
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);  // quantidade de buffer de cores e que o padrao de cores é RGB ou RGBA
     glutInitWindowSize(janela_largura, janela_altura);  // tamanho da janela
-
-    //glutInitWindowPosition(100, 0); // posicao inicial da janela
+    glutInitWindowPosition(50, 50); // Pos. onde surge a janela
     glutCreateWindow("GLUT");   /// cria a janela
-    //glutFullScreen();  // full screen
-
-    glutReshapeFunc(tela);
-    glutDisplayFunc(display);
     glutIdleFunc(display);
-    glutTimerFunc(velocidadebola, anima, 1);
-    glutSetCursor(GLUT_CURSOR_CROSSHAIR);
-
+    glutDisplayFunc(display);
+    glutReshapeFunc(reshape);
     glutMainLoop();
+    return 0;
+}
 
-    return EXIT_SUCCESS;
-}
-void anima(int valor) {
-    colisao();
-    glutPostRedisplay();
-    glutTimerFunc(velocidadebola, anima, 1);
-}
 void colisao() {
-
+    posicao_relativa = translMapa + player_posY;
 }
-void tela(GLsizei w, GLsizei h)
+void reshape(GLsizei w, GLsizei h)
 {
-
-    // Inicializa o sistema de coordenadas
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluOrtho2D(0, janela_largura, 0, janela_altura);
-    glMatrixMode(GL_PROJECTION);
+    if (h == 0) h = 1; // previne a divisão por zero
+    GLfloat aspecto = (GLfloat)w / (GLfloat)h; glViewport(0, 0, w,h); glMatrixMode(GL_PROJECTION);// manipulando matriz de projeção
+    glLoadIdentity(); // zerando a matriz
+    gluPerspective(0.0f, aspecto, -10.0f, 10.0f);
+    glClearColor(0.0f, 0.0f, 0.7f, 1.0f); // configura fundo sem transparencia
+    glEnable(GL_DEPTH_TEST); // alunos devem testar
+    glShadeModel(GL_SMOOTH); // acabamento com suavização
+    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST); // correcao de perspectiva
 }
-
-
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW);
+    keyboard();
+    desenhar();
+    glFlush(); // executa o desenho
+    glutSwapBuffers();
+}
 static class Mapa {
 public:
     static void DesenharParede() {
-        Sleep(5);
 
         glPushMatrix();
         //Parede Direita
         Inimigos::desenharNavio();
         Inimigos::desenharHeli();
-        glBegin(GL_QUADS);
-        glColor3f(0, 0.8, 0);
+            glBegin(GL_QUADS);
+            glColor3f(0, 0.8, 0);
+            
+
+            for (size_t i = 0; i < 10; i++)
+            {
+                glVertex3f(x[i], distanciaMapa,0);//esquerda abaixo
+                glVertex3f(x[i], distanciaMapa+800,0);//subir na esquerda ↑
+                glVertex3f(400, distanciaMapa + 800,0);//direita acima
+                glVertex3f(400, distanciaMapa,0);//direita ↓
+
+                distanciaMapa += 800;
+            }
+            distanciaMapa = -400;
+
+            glEnd();
+
+            //Parede Esquerda
+            glBegin(GL_QUADS);
+            glColor3f(0, 0.8, 0);
 
 
-        for (size_t i = 0; i < 10; i++)
-        {
-            glVertex2d(x[i], distanciaMapa);//esquerda abaixo
-            glVertex2d(x[i], distanciaMapa + 800);//subir na esquerda ↑
-            glVertex2d(400, distanciaMapa + 800);//direita acima
-            glVertex2d(400, distanciaMapa);//direita ↓
+            for (size_t i = 0; i < 10; i++)
+            {
+                glVertex3f(-x[i], distanciaMapa,0);//esquerda abaixo
+                glVertex3f(-x[i], distanciaMapa + 800,0);//subir na esquerda ↑
+                glVertex3f(-400, distanciaMapa + 800,0);//direita acima
+                glVertex3f(-400, distanciaMapa,0);//direita ↓
 
-            distanciaMapa += 800;
-        }
-        distanciaMapa = -400;
+                distanciaMapa += 800;
+            }
+            glEnd();
 
-        glEnd();
-
-        //Parede Esquerda
-        glBegin(GL_QUADS);
-        glColor3f(0, 0.8, 0);
-
-
-        for (size_t i = 0; i < 10; i++)
-        {
-            glVertex2d(-x[i], distanciaMapa);//esquerda abaixo
-            glVertex2d(-x[i], distanciaMapa + 800);//subir na esquerda ↑
-            glVertex2d(-400, distanciaMapa + 800);//direita acima
-            glVertex2d(-400, distanciaMapa);//direita ↓
-
-            distanciaMapa += 800;
-        }
-        glEnd();
-
-        glPopMatrix();
-        distanciaMapa = -400;
-
+            glPopMatrix();
+            distanciaMapa = -400;
+            
     }
 };
+bool teste=false;
+ bool tirosValidar() {
+    bool teste = true;
+    //Zera os tiros sumiram ou colidiram
+  
+        if (xy_Shoot[1] > janela_altura / 2) {
+            printf("ué");
+            xy_Shoot[0] = 0;
+            xy_Shoot[1] = 0;
+            rota = false;
 
+        }
+        //testa se todos os tiros cessaram
+        if ((xy_Shoot[0] == 0) && (xy_Shoot[1] == 0)) {
+            teste = false;
+            rota = false;
+            printf("%i %i", xy_Shoot[1], xy_Shoot[0]);
+        }
+
+    return(teste);
+
+}
 
 static class Jogador {
+    Jogador();
+    ~Jogador();
 public:
+    
     static void desenharP1() {
 
-        glPushMatrix();//empilha uma matriz
+        glPushMatrix();//Matriz de movimentação
+        teste = tirosValidar();
 
-        glTranslatef(direcaoX, direcaoY, 0);//realoca a matriz no plano
+        if (shoot or rota ) {
 
+            Jogador::desenharProjetil();
 
+        }
+        glTranslatef(player_posX, player_posY, 0);//realoca a matriz no plano
+        glPushMatrix();//Matriz de giro
+        
+        glRotatef(t, 0, 1, 0);
+        
         //centro do avião
         glBegin(GL_POLYGON);
         glColor3f(1, 1, 0.7);
-        glVertex2d(-2, -15);
-        glVertex2d(-2, 15);
-        glVertex2d(2, 15);
-        glVertex2d(2, -15);
+        glVertex3d(-2, -15,0.0f);
+        glVertex3d(-2, 15,0.0f);
+        glVertex3d(2, 15,0.0f);
+        glVertex3d(2, -15,0.0f);
         glEnd();
+        printf("%d", translMapa);
 
         //asa direita inferior
 
         glBegin(GL_POLYGON);
-        glVertex2d(2, -12);
-        glVertex2d(6, -12);
-        glVertex2d(6, -15);
-        glVertex2d(10, -15);
-        glVertex2d(10, -12);
-        glVertex2d(6, -12);
-        glVertex2d(6, -10);
-        glVertex2d(2, -10);
+        if (t < 0) {
+            glColor3f(0.6, 0.6, 0.7);
+        }
+        else {
+            glColor3f(1, 1, 0.7);
+
+        }
+        glVertex3f(2, -12,0);
+        glVertex3f(6, -12,0);
+        glVertex3f(6, -15,0);
+        glVertex3f(10, -15,0);
+        glVertex3f(10, -12,0);
+        glVertex3f(6, -12,0);
+        glVertex3f(6, -10,0);
+        glVertex3f(2, -10,0);
         glEnd();
-
-
-        //asa esqueda inferior 
-
-        glBegin(GL_POLYGON);
-        glVertex2d(-2, -12);
-        glVertex2d(-6, -12);
-        glVertex2d(-6, -15);
-        glVertex2d(-10, -15);
-        glVertex2d(-10, -12);
-        glVertex2d(-6, -12);
-        glVertex2d(-6, -10);
-        glVertex2d(-2, -10);
-        glEnd();
-
 
         //asa direita superior 
         glBegin(GL_POLYGON);
-        glVertex2d(2, 0);
-        glVertex2d(18, -5);
-        glVertex2d(14, 0);
-        glVertex2d(2, 10);
-        glVertex2d(2, 0);
+        glVertex3f(2, 0, 0);
+        glVertex3f(18, -5, 0);
+        glVertex3f(14, 0, 0);
+        glVertex3f(2, 10, 0);
+        glVertex3f(2, 0, 0);
         glEnd();
+
+    
+        //asa esqueda inferior 
+
+        glBegin(GL_POLYGON);
+        if (t > 0) {
+            glColor3f(0.6, 0.6, 0.7);
+
+        }
+        else {
+            glColor3f(1, 1, 0.7);
+
+        }
+        glVertex3f(-2, -12,0);
+        glVertex3f(-6, -12,0);
+        glVertex3f(-6, -15,0);
+        glVertex3f(-10, -15,0);
+        glVertex3f(-10, -12,0);
+        glVertex3f(-6, -12,0);
+        glVertex3f(-6, -10,0);
+        glVertex3f(-2, -10,0);
+        glEnd();
+
+
+
 
 
         //asa esquerda superior 
         glBegin(GL_POLYGON);
-        glVertex2d(-2, 0);
-        glVertex2d(-18, -5);
-        glVertex2d(-14, 0);
-        glVertex2d(-2, 10);
-        glVertex2d(-2, 0);
+        glVertex3f(-2, 0,0);
+        glVertex3f(-18, -5,0);
+        glVertex3f(-14, 0,0);
+        glVertex3f(-2, 10,0);
+        glVertex3f(-2, 0,0);
         glEnd();
-
+        
+        glPopMatrix();//matriz de giro
 
         glPopMatrix();
 
 
 
     }
+    static void desenharProjetil(){
+        
+        if (!teste|| !rota) {
+            xy_Shoot[1] = player_posY;
+            xy_Shoot[0] = player_posX;
+            rota = true;
 
+        }else {
+
+                    glPushMatrix();
+                    glLineWidth(3);
+                    glTranslated(xy_Shoot[0], xy_Shoot[1], 0);
+
+                    glBegin(GL_LINES);
+                    glColor3f(1, 1, 1);
+                        glVertex3f(-1.5, 10,0);
+                        glVertex3f(-1.5, 0,0);
+                        xy_Shoot[1]+=6;
+                        printf("%i",xy_Shoot[1]);
+                    glEnd();
+                    glPopMatrix();
+            
+        }
+        
+    }
 };
 void desenhar() {
-    Sleep(5);
-    Jogador::desenharP1();
-    srand(time(NULL));
-    
-    
-    
-
-    if (rand() % 100 <= 5) {
-       
-    }
-      
-    
-    translMapa += 1;
-    glTranslatef(0, -translMapa, 0);
-    Mapa::DesenharParede();
-
-    glFlush();
-}
-void display() {
-    keyboard();
-    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
     glLoadIdentity();
-
-    glTranslatef(janela_largura / 2, janela_altura / 2, 0.0);
-    glClearColor(0.00f, 0.0f, 1.0f, 1.0f);  // cor do fundo
-    glClear(GL_COLOR_BUFFER_BIT);  // limpa a tela com a cor do fundo
-    glViewport(0, 0, janela_largura, janela_altura);
-
-    desenhar();
-
-    glFlush(); // executa o desenho
+    glScalef(0.0025, 0.0025, 0.0025);
+    Jogador::desenharP1();
+    glBegin(GL_LINES);
+    glColor3f(1,0.5,0.5);
+    glVertex2f(-400,0);
+    glVertex2f(400,0);
+    glEnd();
+   translMapa += 1;
+   glTranslatef(0, -translMapa, 0);
+    Mapa::DesenharParede();
+    glPopMatrix();
+ 
 }
+
 void keyboard()
 {
 
     if (GetAsyncKeyState('W') != 0) {
-        if (direcaoY < 384) {
-            direcaoY += 2;
+        if (player_posY < 385) {
+            player_posY += 2;
+            
         }
     }
     if (GetAsyncKeyState('A') != 0) {
-        if (direcaoX > -380) {
-            direcaoX -= 2;
+        if (player_posX > -380) {
+            player_posX -= 2;
+            t = 30;
         }
+        
+    }else if (GetAsyncKeyState('D') != 0) {
+        if (player_posX < 380) {
+            player_posX += 2;
+        }
+        t = -30;
+    }
+    else {
+        t = 0;
     }
     if (GetAsyncKeyState('S') != 0) {
-        if (direcaoY > -384) {
-            direcaoY -= 2;
+        if (player_posY > -385) {
+            player_posY -= 2;
         }
     }
-    if (GetAsyncKeyState('D') != 0) {
-        if (direcaoX < 380) {
-            direcaoX += 2;
-        }
-    }
+    
+    shoot = (GetAsyncKeyState(0x20) != 0) ? TRUE : FALSE;
+
     glutPostRedisplay();
 }
