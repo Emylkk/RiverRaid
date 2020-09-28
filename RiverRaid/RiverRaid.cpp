@@ -76,7 +76,7 @@ void menuDraw(){
 	glEnd();
 	//Texto
 	glColor3f(0.8,0.8,1);
-	glRasterPos3i(-100,-100,-1);
+	glRasterPos3i(-150,-300,-1);
 	glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, menu);
 	//fundo
 	glPushMatrix();
