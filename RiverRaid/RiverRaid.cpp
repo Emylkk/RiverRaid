@@ -49,10 +49,15 @@ public:
     ~Inimigos();
     int inimigosVet[10][10] = {};
     static void desenharNavio() {
-        glPushMatrix();
-        glTranslatef(-50, 70, 0);
+        
+        
 
-
+        for (size_t i = 0; i < 10; i++){
+            glPushMatrix();
+        
+        glTranslatef(inimigosVet[0][i], inimigosVet[1][i], 0);
+        printf("%d-%d \n ", inimigosVet[0][i], inimigosVet[1][i]);
+        
         //parte de baixo do barco
         
 
@@ -93,15 +98,18 @@ public:
         glEnd();
 
         glPopMatrix();
+      }
     }
 
 
 public:
     static void desenharHeli() {
 
-        glPushMatrix();
+        for (size_t i = 10; i < 19; i++) {
+            glPushMatrix();
 
-        glTranslatef(50, 50, 0);
+            glTranslatef(inimigosVet[0][i], inimigosVet[1][i], 0);
+            printf("%d-%d \n ", inimigosVet[0][i], inimigosVet[1][i]);
 
 
         //base do heli
@@ -197,7 +205,7 @@ public:
         glEnd();
 
         glPopMatrix();
-
+     }
     }
 };
 
