@@ -41,7 +41,7 @@ void keyboard();
 void display(void);
 void desenhar();
 void colisao();
-const unsigned char tete[] = { "Marine" };
+
 
 class Inimigos {
 public:
@@ -54,9 +54,7 @@ public:
 
 
         //parte de baixo do barco
-        glColor3f(0, 0, 0);
-        glRasterPos3f(-20, 0, 0);
-        glutBitmapString(GLUT_BITMAP_HELVETICA_10,tete);
+        
 
         glBegin(GL_POLYGON);
         glColor3f(0, 0.7, 0.9);
