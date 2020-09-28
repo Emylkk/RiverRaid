@@ -22,6 +22,15 @@ int translMapa = 0, posicao_relativaY = 0, distanciaMapa = -400, paredeAtual=0;
 
 // Larguras de Paredes laterais
 int x[10]{ 20, 100, 300, 150, 250, 100, 30, 300, 200, 350 };
+
+// Posicao dos inimos 
+int inimigosVet[2][20] = {
+    23,     -50,    220,    -220,       0,      50,      50,     150,    50,     -100,   0,     200,    -240,   0,      0,      0,      0,    -10,  -10,    0,
+    450,    1100,    1800,    1700,    2000,    2500,    3200,    6200,   6800,   7400,  500,   1700,   1800,   2700,   3000,   4000,   4100,  6300, 6800, 7000
+   
+};
+
+
 //Posição do tiro
 int xy_Shoot[2]= {0,0};
 bool rota = false;
@@ -285,6 +294,141 @@ public:
             
     }
 };
+
+static class Ilhas {
+public:
+    static void Ilha1() {
+        //ilha 2
+        glPushMatrix();
+        glTranslatef(-150,1400,0);
+        
+        glBegin(GL_QUADS);
+        glColor3f(0, 0.8, 0);
+        glVertex3f(0,0,0);
+        glVertex3f(350,0,0);
+        glVertex3f(350,350,0);
+        glVertex3f(0, 350,0);
+        glEnd();
+
+        glPopMatrix();
+
+    }
+    //ilha 2
+    static void Ilha2() {
+        glPushMatrix();
+        glTranslatef(-100, 3300, 0);
+
+        glBegin(GL_QUADS);
+        glColor3f(0, 0.8, 0);
+        glVertex3f(0,0,0);
+        glVertex3f(200,0,0);
+        glVertex3f(200,200,0);
+        glVertex3f(0,200,0);
+        glEnd();
+
+        glPopMatrix();
+
+    }
+    //ilha 3
+    static void Ilha3() {
+        glPushMatrix();
+        glTranslatef(-200, 5500, 0);
+
+        glBegin(GL_QUADS);
+        glColor3f(0, 0.8, 0);
+        glVertex3f(0, 0, 0);
+        glVertex3f(400, 0, 0);
+        glVertex3f(400, 400, 0);
+        glVertex3f(0, 400, 0);
+        glEnd();
+
+        glPopMatrix();
+
+    }
+   
+};
+
+//gasolina
+static class objeto{
+public:
+    static void GalaoGasolina() {
+
+        for (size_t i = 0; i < 10; i++){
+
+        
+        glPushMatrix();
+        glTranslatef(gasolinaVet[0][i], gasolinaVet[1][i], 0);
+
+        //parte 1 de 4
+        glColor3f(0, 0, 0);
+        const unsigned char parte1[] = { "L" };
+        glRasterPos3f(7, 1, 0);
+        glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, parte1);
+
+       
+        glBegin(GL_QUADS);
+        glColor3f(1.0, 1.0, 1.0);
+        glVertex3f(0, 0, 0);
+        glVertex3f(30, 0, 0);
+        glVertex3f(30, 20, 0);
+        glVertex3f(0, 20, 0);
+
+        glEnd();
+       
+
+        //parte 2 de 4
+        glColor3f(0, 0, 0);
+        const unsigned char parte2[] = { "E" };
+        glRasterPos3f(7, 21, 0);
+        glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, parte2);
+
+        glBegin(GL_QUADS);
+        glColor3f(0.7, 0.0, 0.0);
+        glVertex3f(0,20,0);
+        glVertex3f(30,20,0);
+        glVertex3f(30,40,0);
+        glVertex3f(0,40,0);
+
+       
+        glEnd();
+
+        //parte 3 de 4
+
+        glColor3f(0, 0, 0);
+        const unsigned char parte3[] = { "U" };
+        glRasterPos3f(7, 41, 0);
+        glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, parte3);
+
+        glBegin(GL_QUADS);
+        glColor3f(1.0, 1.0, 1.0);
+        glVertex3f(0,40,0);
+        glVertex3f(30,40,0);
+        glVertex3f(30,60,0);
+        glVertex3f(0,60,0);
+        glEnd();
+
+        //parte 4 de 4
+
+        glColor3f(0, 0, 0);
+        const unsigned char parte4[] = { "F" };
+        glRasterPos3f(7, 61, 0);
+        glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, parte4);
+
+        glBegin(GL_QUADS);
+        glColor3f(0.7, 0.0, 0.0);
+        glVertex3f(0,60,0);
+        glVertex3f(30,60,0);
+        glVertex3f(30,80,0);
+        glVertex3f(0,80,0);
+        glEnd();
+
+       
+        glPopMatrix();
+        }
+    }
+};
+
+
 bool teste=false;
  bool tirosValidar() {
     bool teste = true;
@@ -444,6 +588,11 @@ void desenhar() {
    translMapa += 1;
    glTranslatef(0, -translMapa, 0);
     Mapa::DesenharParede();
+    objeto::GalaoGasolina();
+    Ilhas::Ilha1();
+    Ilhas::Ilha2();
+    Ilhas::Ilha3();
+   
     glPopMatrix();
  
 }
