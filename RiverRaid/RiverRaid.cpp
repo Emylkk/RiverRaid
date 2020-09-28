@@ -6,16 +6,20 @@
 #include <thread>
 #include<ntddbeep.h>
 #include<iostream>
+#include<locale>
 
 #define janela_altura  800
 #define janela_largura 800
 const  int Y = 1;
 const int X = 0;
+
 //Variaveis de animação
 int t = 0, animaHelice = 0;
 bool dead = false;
 bool striked = false;
 bool refill = false;
+bool started = false;
+int girar=0;
 //Vetor de Inimigos
 int inimigosVet[2][20] = {
 	23,     -50,    220,    -220,       0,      50,      50,     150,    50,     -100,   10,     200,    -240,   0,      0,      0,      0,    -10,  -10,    0,
@@ -37,7 +41,7 @@ int tamHelicopteroXY[2] = { 38,18 };
 int tamNavioXY[2] = { 45,12 };
 
 //Posicionamento 
-int mod = 400, translMapa = 0, posicao_relativaY = 0, distanciaMapa = -400, paredeAtual = 0,posicao_relativaYshoot=0;
+int mod = 400, translMapa = 0, posicao_relativaY = 0, distanciaMapa = -400, paredeAtual = 0, posicao_relativaYshoot = 0;
 //Posicionamento do Jogador 
 float player_posX = 0, player_posY = 20;
 
@@ -57,8 +61,37 @@ void desenhar();
 void restart();
 bool colisao();
 //Testes
-const unsigned char tete[] = { "Marine" };
+const unsigned char menu[] = { "Aperte Espaco Para Iniciar" };
 using namespace std;
+void menuDraw(){
+	glPushMatrix();
+	glLoadIdentity();
+	glScalef(0.0025, 0.0025, 0.0025);
+	glBegin(GL_QUADS);
+	glColor3f(0.5,0.5,0.5);
+	glVertex3f(-janela_largura/2,-janela_altura/2,0);
+	glVertex3f(-janela_largura/2,janela_altura/2,0);
+	glVertex3f(janela_largura/2,janela_altura/2,0);
+	glVertex3f(janela_largura/2,-janela_altura/2,0);
+	glEnd();
+	//Texto
+	glColor3f(0.8,0.8,1);
+	glRasterPos3i(-100,-100,-1);
+	glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, menu);
+	//fundo
+	glPushMatrix();
+	glRotatef(girar,1,0.51,1);
+		glColor3b(1, 1, 1);
+		glutWireSphere(100, 40, 10);
+	glPopMatrix();
+	girar++;
+	if (girar > 360) {
+		girar = 0;
+	}
+	glPopMatrix();
+	glFlush(); // executa o desenho
+	glutSwapBuffers();
+}
 class Inimigos {
 public:
 	Inimigos();
@@ -223,7 +256,7 @@ void som() {
 		Sleep(10);
 
 		if (refill) {
-			for (size_t i = 10; i < 1000; i+=150)
+			for (size_t i = 10; i < 1000; i += 150)
 			{
 				Beep(i, 15);
 			}
@@ -233,16 +266,16 @@ void som() {
 
 		}
 		if (striked) {
-			Beep(BEEP_FREQUENCY_MINIMUM,30);
-			Beep(BEEP_FREQUENCY_MINIMUM,35);
-			Beep(BEEP_FREQUENCY_MINIMUM,85);
+			Beep(BEEP_FREQUENCY_MINIMUM, 30);
+			Beep(BEEP_FREQUENCY_MINIMUM, 35);
+			Beep(BEEP_FREQUENCY_MINIMUM, 85);
 		}
 	}
 }
 void  main(int argc, char** argv)
 {
 	thread ts(som);
-
+	setlocale(LC_ALL, "Portuguese");
 	glutInit(&argc, argv);  // controla se o sistema operacional tem suporte a janelas.
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);  // quantidade de buffer de cores e que o padrao de cores é RGB ou RGBA
 	glutInitWindowSize(janela_largura, janela_altura);  // tamanho da janela
@@ -276,46 +309,46 @@ bool colisao() {
 		dead = true;
 		restart();
 	}
-		for (size_t i = 0; i < 10; i++)
-		{
-			if ((posicao_relativaY+tamPlayerXY[Y] >= inimigosVet[Y][i] - tamNavioXY[Y]) && (posicao_relativaY-tamPlayerXY[Y] < inimigosVet[Y][i] + tamNavioXY[Y]) && (player_posX-tamPlayerXY[X] <= inimigosVet[X][i] + tamNavioXY[X]) && (player_posX+tamPlayerXY[X] >= inimigosVet[X][i] - tamNavioXY[X])) {
-				xy_Shoot[X] = 0;
-				xy_Shoot[Y] = 0;
-				restart();
-				dead = true;
-			}
-
+	for (size_t i = 0; i < 10; i++)
+	{
+		if ((posicao_relativaY + tamPlayerXY[Y] >= inimigosVet[Y][i] - tamNavioXY[Y]) && (posicao_relativaY - tamPlayerXY[Y] < inimigosVet[Y][i] + tamNavioXY[Y]) && (player_posX - tamPlayerXY[X] <= inimigosVet[X][i] + tamNavioXY[X]) && (player_posX + tamPlayerXY[X] >= inimigosVet[X][i] - tamNavioXY[X])) {
+			xy_Shoot[X] = 0;
+			xy_Shoot[Y] = 0;
+			restart();
+			dead = true;
 		}
-		for (size_t i = 10; i < 20; i++)
-		{
-			if ((posicao_relativaY + tamPlayerXY[Y] >= inimigosVet[Y][i] - tamHelicopteroXY[Y]) && (posicao_relativaY - tamPlayerXY[Y] < inimigosVet[Y][i] + tamHelicopteroXY[Y]) && (player_posX - tamPlayerXY[X] <= inimigosVet[X][i] + tamHelicopteroXY[X]) && (player_posX + tamPlayerXY[X] >= inimigosVet[X][i] - tamHelicopteroXY[X])) {
-				xy_Shoot[X] = 0;
-				xy_Shoot[Y] = 0;
-				restart();
-				dead = true;
-			}
 
 	}
-		for (size_t i = 0; i < 8; i++)
-		{
-			if ((posicao_relativaY + tamPlayerXY[Y] >= gasolinaVet[Y][i] - 15) && (posicao_relativaY - tamPlayerXY[Y] < gasolinaVet[Y][i] + 15) && (player_posX - tamPlayerXY[X] <= gasolinaVet[X][i] +15 ) && (player_posX + tamPlayerXY[X] >= gasolinaVet[X][i] - 15)) {
-				xy_Shoot[X] = 0;
-				xy_Shoot[Y] = 0;
-				gasolinaVet[Y][i] = -500;
-				refill = true;
-			}
-
+	for (size_t i = 10; i < 20; i++)
+	{
+		if ((posicao_relativaY + tamPlayerXY[Y] >= inimigosVet[Y][i] - tamHelicopteroXY[Y]) && (posicao_relativaY - tamPlayerXY[Y] < inimigosVet[Y][i] + tamHelicopteroXY[Y]) && (player_posX - tamPlayerXY[X] <= inimigosVet[X][i] + tamHelicopteroXY[X]) && (player_posX + tamPlayerXY[X] >= inimigosVet[X][i] - tamHelicopteroXY[X])) {
+			xy_Shoot[X] = 0;
+			xy_Shoot[Y] = 0;
+			restart();
+			dead = true;
 		}
-		for (size_t i = 0; i < 3; i++)
-		{
-			if ((posicao_relativaY + tamPlayerXY[Y] >= ilhasYDim[0][i] -ilhasYDim[1][i] ) && (posicao_relativaY - tamPlayerXY[Y] < ilhasYDim[0][i] + ilhasYDim[1][i]) && (player_posX - tamPlayerXY[X] <= 0 + ilhasYDim[1][i]) && (player_posX + tamPlayerXY[X] >= 0 - ilhasYDim[1][i])) {
-				xy_Shoot[X] = 0;
-				xy_Shoot[Y] = 0;
-				restart();
-				dead = true;
-			}
 
+	}
+	for (size_t i = 0; i < 8; i++)
+	{
+		if ((posicao_relativaY + tamPlayerXY[Y] >= gasolinaVet[Y][i] - 15) && (posicao_relativaY - tamPlayerXY[Y] < gasolinaVet[Y][i] + 15) && (player_posX - tamPlayerXY[X] <= gasolinaVet[X][i] + 15) && (player_posX + tamPlayerXY[X] >= gasolinaVet[X][i] - 15)) {
+			xy_Shoot[X] = 0;
+			xy_Shoot[Y] = 0;
+			gasolinaVet[Y][i] = -500;
+			refill = true;
 		}
+
+	}
+	for (size_t i = 0; i < 3; i++)
+	{
+		if ((posicao_relativaY + tamPlayerXY[Y] >= ilhasYDim[0][i] - ilhasYDim[1][i]) && (posicao_relativaY - tamPlayerXY[Y] < ilhasYDim[0][i] + ilhasYDim[1][i]) && (player_posX - tamPlayerXY[X] <= 0 + ilhasYDim[1][i]) && (player_posX + tamPlayerXY[X] >= 0 - ilhasYDim[1][i])) {
+			xy_Shoot[X] = 0;
+			xy_Shoot[Y] = 0;
+			restart();
+			dead = true;
+		}
+
+	}
 	return(false);
 }
 
@@ -348,7 +381,7 @@ public:
 			//parte 1 de 4
 
 			glColor3f(0, 0, 0);
-			
+
 			glRasterPos3f(-7, -37, -1);
 			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, parte1);
 
@@ -368,10 +401,10 @@ public:
 
 			glBegin(GL_QUADS);
 			glColor3f(0.7, 0.0, 0.0);
-			glVertex3f(-15,-20, 0);
-			glVertex3f(15,-20, 0);
-			glVertex3f(15,0, 0);
-			glVertex3f(-15,0, 0);
+			glVertex3f(-15, -20, 0);
+			glVertex3f(15, -20, 0);
+			glVertex3f(15, 0, 0);
+			glVertex3f(-15, 0, 0);
 			glEnd();
 
 			//parte 3 de 4
@@ -409,15 +442,21 @@ public:
 void display() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
+
 	posicao_relativaY = translMapa + player_posY;
-	colisao();
 	keyboard();
-	desenhar();
-	glFlush(); // executa o desenho
-	glutSwapBuffers();
-	dead = false;
-	striked = false;
-	refill = false;
+	if (started) {
+		colisao();
+		desenhar();
+		glFlush(); // executa o desenho
+		glutSwapBuffers();
+		dead = false;
+		striked = false;
+		refill = false;
+	}
+	else {
+		menuDraw();
+	}
 }
 
 static class Mapa {
@@ -549,7 +588,7 @@ bool tirosValidar() {
 		}
 		for (size_t i = 0; i < 3; i++)
 		{
-			if ((xy_Shoot[Y] + translMapa >= ilhasYDim[0][i] - ilhasYDim[1][i]) && (xy_Shoot[Y] + translMapa < ilhasYDim[0][i] + ilhasYDim[1][i]) && (xy_Shoot[X] <= 0 + ilhasYDim[1][i]) && (xy_Shoot[X] >= 0 - ilhasYDim[1][i] )) {
+			if ((xy_Shoot[Y] + translMapa >= ilhasYDim[0][i] - ilhasYDim[1][i]) && (xy_Shoot[Y] + translMapa < ilhasYDim[0][i] + ilhasYDim[1][i]) && (xy_Shoot[X] <= 0 + ilhasYDim[1][i]) && (xy_Shoot[X] >= 0 - ilhasYDim[1][i])) {
 				xy_Shoot[X] = 0;
 				xy_Shoot[Y] = 0;
 				rota = false;
@@ -714,36 +753,40 @@ void desenhar() {
 
 void keyboard()
 {
+	if (started) {
+		if (GetAsyncKeyState('W') != 0) {
+			if (player_posY < 385) {
+				player_posY += 2;
 
-	if (GetAsyncKeyState('W') != 0) {
-		if (player_posY < 385) {
-			player_posY += 2;
+			}
+		}
+		if (GetAsyncKeyState('A') != 0) {
+			if (player_posX > -380) {
+				player_posX -= 2;
+				t = 30;
+			}
 
 		}
-	}
-	if (GetAsyncKeyState('A') != 0) {
-		if (player_posX > -380) {
-			player_posX -= 2;
-			t = 30;
+		else if (GetAsyncKeyState('D') != 0) {
+			if (player_posX < 380) {
+				player_posX += 2;
+			}
+			t = -30;
+		}
+		else {
+			t = 0;
+		}
+		if (GetAsyncKeyState('S') != 0) {
+			if (player_posY > -385) {
+				player_posY -= 1;
+			}
 		}
 
-	}
-	else if (GetAsyncKeyState('D') != 0) {
-		if (player_posX < 380) {
-			player_posX += 2;
-		}
-		t = -30;
+		shoot = (GetAsyncKeyState(0x20) != 0) ? TRUE : FALSE;
 	}
 	else {
-		t = 0;
+		started = (GetAsyncKeyState(0x20) != 0) ? TRUE : FALSE;
 	}
-	if (GetAsyncKeyState('S') != 0) {
-		if (player_posY > -385) {
-			player_posY -= 1;
-		}
-	}
-	shoot = (GetAsyncKeyState(0x20) != 0) ? TRUE : FALSE;
-
 	glutPostRedisplay();
 }
 
