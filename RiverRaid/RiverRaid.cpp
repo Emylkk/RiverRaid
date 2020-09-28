@@ -3,12 +3,25 @@
 #include <GL/glut.h>
 #include < GL/freeglut.h>
 #include <math.h>
+#include <thread>
 #include<iostream>
 
 #define janela_altura  800
 #define janela_largura 800
 
 int t = 0, animaHelice=0;
+//Inimigos e combustiveis
+// Posicao dos inimos 
+int inimigosVet[2][20] = {
+    23,     -50,    220,    -220,       0,      50,      50,     150,    50,     -100,   0,     200,    -240,   0,      0,      0,      0,    -10,  -10,    0,
+    450,    1100,    1800,    1700,    2000,    2500,    3200,    6200,   6800,   7400,  500,   1700,   1800,   2700,   3000,   4000,   4100,  6300, 6800, 7000
+
+};
+int gasolinaVet[2][10] = {
+    50,0,       0,  0,      0,  0,      0,  0,      
+    1100,2000,  3200,4500,  5000,6500,  7000,7500  
+    
+};
 //dimensões x de metade dos objetos- Inicio
 int tamPlayer = 18;
 int tamHelicoptero = 38;
@@ -16,25 +29,13 @@ int tamNavio = 45;
 //fim dimensoes
 
 //Posicionamento
+int mod = 400;
 float player_posX = 0, player_posY = 20;
 int translMapa = 0, posicao_relativaY = 0, distanciaMapa = -400, paredeAtual=0;
 //Fim Posicionamento
 
 // Larguras de Paredes laterais
 int x[10]{ 20, 100, 300, 150, 250, 100, 30, 300, 200, 350 };
-
-// Posicao dos inimos 
-int inimigosVet[2][20] = {
-    23,     -50,    220,    -220,       0,      50,      50,     150,    50,     -100,   0,     200,    -240,   0,      0,      0,      0,    -10,  -10,    0,
-    450,    1100,    1800,    1700,    2000,    2500,    3200,    6200,   6800,   7400,  500,   1700,   1800,   2700,   3000,   4000,   4100,  6300, 6800, 7000
-   
-};
-int gasolinaVet[2][10] = {
-    50,0,       0,  0,      0,  0,      0,  0,      
-    1100,2000,  3200,4500,  5000,6500,  7000,7500  
-    
-};
-
 //Posição do tiro
 int xy_Shoot[2]= {0,0};
 bool rota = false;
@@ -44,65 +45,64 @@ void reshape(GLsizei w, GLsizei h);
 void keyboard();
 void display(void);
 void desenhar();
-void colisao();
-
+void restart();
+bool colisao();
+const unsigned char tete[] = { "Marine" };
 
 class Inimigos {
 public:
     Inimigos();
     ~Inimigos();
-    int inimigosVet[10][10] = {};
     static void desenharNavio() {
-        
-        
 
-        for (size_t i = 0; i < 10; i++){
+
+
+        for (size_t i = 0; i < 10; i++) {
             glPushMatrix();
-        
-        glTranslatef(inimigosVet[0][i], inimigosVet[1][i], 0);
-        printf("%d-%d \n ", inimigosVet[0][i], inimigosVet[1][i]);
-        
-        //parte de baixo do barco
-        
 
-        glBegin(GL_POLYGON);
-        glColor3f(0, 0.7, 0.9);
-        glVertex2d(-31, -2);
-        glVertex2d(22, -2);
-        glVertex2d(42, 4);
-        glVertex2d(-45, 4);
-        glEnd();
+            glTranslatef(inimigosVet[0][i], inimigosVet[1][i], 0);
 
-        //parte do meio do barco 
-        glBegin(GL_POLYGON);
-        glColor3f(0.75, 0, 0);
-        glVertex2d(-42, 4);
-        glVertex2d(42, 4);
-        glVertex2d(42, 11);
-        glVertex2d(-45, 11);
-        glEnd();
-
-        //parte de cima do barco
-        glBegin(GL_QUADS);
-        glColor3f(0.0, 0.0, 0.0);
-        //parte inferior
-        glVertex2d(-23, 11);
-        glVertex2d(23, 11);
-        glVertex2d(23, 17);
-        glVertex2d(-23, 17);
-
-        //parte chamine
-        glVertex2d(-5, 11);
-        glVertex2d(15, 11);
-        glVertex2d(15, 25);
-        glVertex2d(-5, 25);
+            //parte de baixo do barco
 
 
+            glBegin(GL_POLYGON);
+            glColor3f(0, 0.7, 0.9);
+            glVertex2d(-31, -2);
+            glVertex2d(22, -2);
+            glVertex2d(42, 4);
+            glVertex2d(-45, 4);
+            glEnd();
 
-        glEnd();
+            //parte do meio do barco 
+            glBegin(GL_POLYGON);
+            glColor3f(0.75, 0, 0);
+            glVertex2d(-42, 4);
+            glVertex2d(42, 4);
+            glVertex2d(42, 11);
+            glVertex2d(-45, 11);
+            glEnd();
 
-        glPopMatrix();
-      }
+            //parte de cima do barco
+            glBegin(GL_QUADS);
+            glColor3f(0.0, 0.0, 0.0);
+            //parte inferior
+            glVertex2d(-23, 11);
+            glVertex2d(23, 11);
+            glVertex2d(23, 17);
+            glVertex2d(-23, 17);
+
+            //parte chamine
+            glVertex2d(-5, 11);
+            glVertex2d(15, 11);
+            glVertex2d(15, 25);
+            glVertex2d(-5, 25);
+
+
+
+            glEnd();
+
+            glPopMatrix();
+        }
     }
 
 
@@ -113,107 +113,105 @@ public:
             glPushMatrix();
 
             glTranslatef(inimigosVet[0][i], inimigosVet[1][i], 0);
-            printf("%d-%d \n ", inimigosVet[0][i], inimigosVet[1][i]);
 
 
-        //base do heli
-        glBegin(GL_POLYGON);
-        glColor3f(0.0, 0.6, 0.0);
-        glVertex2d(20, 1);
-        glVertex2d(28, 4);
-        glVertex2d(7, 4);
-        glVertex2d(14, 1);
-        glVertex2d(10, -4);
-        glVertex2d(24, -4);
-        glEnd();
+            //base do heli
+            glBegin(GL_POLYGON);
+            glColor3f(0.0, 0.6, 0.0);
+            glVertex2d(20, 1);
+            glVertex2d(28, 4);
+            glVertex2d(7, 4);
+            glVertex2d(14, 1);
+            glVertex2d(10, -4);
+            glVertex2d(24, -4);
+            glEnd();
 
-        //parte de tras do heli
-        glBegin(GL_QUADS);
-        glColor3f(0.0, 0.5, 1.0);
-        glVertex2f(-22, 0);
-        glVertex2f(-30, 0);
-        glVertex2f(-30, 18);
-        glVertex2f(-22, 18);
-        glEnd();
-
-
-        //parte do meio do heli
-        glBegin(GL_QUADS);
-        glColor3f(0.0, 0.0, 0.4);
-        glVertex2f(30, 4);
-        glVertex2f(-30, 4);
-        glVertex2f(-30, 14);
-        glVertex2f(30, 14);
-        glEnd();
+            //parte de tras do heli
+            glBegin(GL_QUADS);
+            glColor3f(0.0, 0.5, 1.0);
+            glVertex2f(-22, 0);
+            glVertex2f(-30, 0);
+            glVertex2f(-30, 18);
+            glVertex2f(-22, 18);
+            glEnd();
 
 
-        //teto do heli
-        glBegin(GL_QUADS);
-        glColor3f(0.0, 0.0, 0.3);
-        glVertex2f(30, 14);
-        glVertex2f(0, 14);
-        glVertex2f(0, 20);
-        glVertex2f(30, 20);
+            //parte do meio do heli
+            glBegin(GL_QUADS);
+            glColor3f(0.0, 0.0, 0.4);
+            glVertex2f(30, 4);
+            glVertex2f(-30, 4);
+            glVertex2f(-30, 14);
+            glVertex2f(30, 14);
+            glEnd();
 
-        glEnd();
 
-        //pilar da helice 
-        glBegin(GL_QUADS);
-        glColor3f(1.0, 1.0, 0.5);
-        glVertex2f(22, 20);
-        glVertex2f(12, 20);
-        glVertex2f(12, 26);
-        glVertex2f(22, 26);
-        glEnd();
+            //teto do heli
+            glBegin(GL_QUADS);
+            glColor3f(0.0, 0.0, 0.3);
+            glVertex2f(30, 14);
+            glVertex2f(0, 14);
+            glVertex2f(0, 20);
+            glVertex2f(30, 20);
 
-        animaHelice++;
-        if (animaHelice == 10) {
-            animaHelice = -10;
+            glEnd();
+
+            //pilar da helice 
+            glBegin(GL_QUADS);
+            glColor3f(1.0, 1.0, 0.5);
+            glVertex2f(22, 20);
+            glVertex2f(12, 20);
+            glVertex2f(12, 26);
+            glVertex2f(22, 26);
+            glEnd();
+
+            animaHelice++;
+            if (animaHelice == 10) {
+                animaHelice = -10;
+            }
+
+            //primeira parte da helice 
+            glBegin(GL_QUADS);
+            glColor3f(1.0, 1.0, 0.5);
+            if (animaHelice < 0) {
+                glVertex2f(14, 27);
+                glVertex2f(38, 27);
+                glVertex2f(38, 32);
+                glVertex2f(14, 32);
+            }
+            else if (animaHelice > 0)
+            {
+                glVertex2f(14, 23);
+                glVertex2f(38, 23);
+                glVertex2f(38, 28);
+                glVertex2f(14, 28);
+            }
+
+            glEnd();
+
+            //segunda parte da helice 
+            glBegin(GL_QUADS);
+            glColor3f(1.0, 1.0, 0.5);
+            if (animaHelice < 0) {
+                glVertex2f(22, 23);
+                glVertex2f(-2, 23);
+                glVertex2f(-2, 28);
+                glVertex2f(22, 28);
+            }
+            else if (animaHelice > 0)
+            {
+                glVertex2f(22, 27);
+                glVertex2f(-2, 27);
+                glVertex2f(-2, 32);
+                glVertex2f(22, 32);
+            }
+            glEnd();
+
+            glPopMatrix();
         }
-
-        //primeira parte da helice 
-        glBegin(GL_QUADS);
-        glColor3f(1.0, 1.0, 0.5);
-        if (animaHelice < 0) {
-            glVertex2f(14, 27);
-            glVertex2f(38, 27);
-            glVertex2f(38, 32);
-            glVertex2f(14, 32);
-        }
-        else if (animaHelice > 0)
-        {
-            glVertex2f(14, 23);
-            glVertex2f(38, 23);
-            glVertex2f(38, 28);
-            glVertex2f(14, 28);
-        }
-
-        glEnd();
-
-        //segunda parte da helice 
-        glBegin(GL_QUADS);
-        glColor3f(1.0, 1.0, 0.5);
-        if (animaHelice < 0) {
-            glVertex2f(22, 23);
-            glVertex2f(-2, 23);
-            glVertex2f(-2, 28);
-            glVertex2f(22, 28);
-        }
-        else if (animaHelice > 0)
-        {
-            glVertex2f(22, 27);
-            glVertex2f(-2, 27);
-            glVertex2f(-2, 32);
-            glVertex2f(22, 32);
-        }
-        glEnd();
-
-        glPopMatrix();
-     }
     }
 };
-
-int main(int argc, char** argv)
+ void  main(int argc, char** argv)
 {
     glutInit(&argc, argv);  // controla se o sistema operacional tem suporte a janelas.
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);  // quantidade de buffer de cores e que o padrao de cores é RGB ou RGBA
@@ -224,19 +222,30 @@ int main(int argc, char** argv)
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
     glutMainLoop();
-    return 0;
 }
 
-void colisao() {
+ bool colisao() {
     
-    ///Se a Posicao Atual do jogador alcançar a altura de troca de parede
-    if ((posicao_relativaY) % 400 == 0 && posicao_relativaY > 0) {
+    ///Se a Posicao Atual do jogador alcançar a altura de troca de parede "razão de 6"
+    if ((((posicao_relativaY % mod >= 0)&&(posicao_relativaY % mod <= 6)) && posicao_relativaY > 6)) {
         paredeAtual++;
+        mod += 800;
         printf("%i Parede", paredeAtual);
     }
-    if ( true) {
+    //paredes à esquerda
+    if (player_posX-tamPlayer <(-x[paredeAtual]) ){
+        Beep(100, 2000);
+        restart();
+    }
+    _No_competing_thread_begin_
+    //Paredes à Direita
+    if (player_posX + tamPlayer > (x[paredeAtual])) {
+        Beep(100, 2000);
+        restart();
 
     }
+    //TODO Paredes à frente
+    return(false);
 }
 void reshape(GLsizei w, GLsizei h)
 {
@@ -245,14 +254,95 @@ void reshape(GLsizei w, GLsizei h)
     glLoadIdentity(); // zerando a matriz
     gluPerspective(0.0f, aspecto, -10.0f, 10.0f);
     glClearColor(0.0f, 0.0f, 0.7f, 1.0f); // configura fundo sem transparencia
-    glEnable(GL_DEPTH_TEST); // alunos devem testar
+    glEnable(GL_DEPTH_TEST); 
     glShadeModel(GL_SMOOTH); // acabamento com suavização
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST); // correcao de perspectiva
 }
+
+//gasolina
+static class objeto {
+public:
+    static void GalaoGasolina() {
+
+        for (size_t i = 0; i < 10; i++) {
+
+
+            glPushMatrix();
+            glTranslatef(gasolinaVet[0][i], gasolinaVet[1][i], 0);
+
+            //parte 1 de 4
+            glColor3f(0, 0, 0);
+            const unsigned char parte1[] = { "L" };
+            glRasterPos3f(7, 1, 0);
+            glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, parte1);
+
+
+            glBegin(GL_QUADS);
+            glColor3f(1.0, 1.0, 1.0);
+            glVertex3f(0, 0, 0);
+            glVertex3f(30, 0, 0);
+            glVertex3f(30, 20, 0);
+            glVertex3f(0, 20, 0);
+
+            glEnd();
+
+
+            //parte 2 de 4
+            glColor3f(0, 0, 0);
+            const unsigned char parte2[] = { "E" };
+            glRasterPos3f(7, 21, 0);
+            glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, parte2);
+
+            glBegin(GL_QUADS);
+            glColor3f(0.7, 0.0, 0.0);
+            glVertex3f(0, 20, 0);
+            glVertex3f(30, 20, 0);
+            glVertex3f(30, 40, 0);
+            glVertex3f(0, 40, 0);
+
+
+            glEnd();
+
+            //parte 3 de 4
+
+            glColor3f(0, 0, 0);
+            const unsigned char parte3[] = { "U" };
+            glRasterPos3f(7, 41, 0);
+            glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, parte3);
+
+            glBegin(GL_QUADS);
+            glColor3f(1.0, 1.0, 1.0);
+            glVertex3f(0, 40, 0);
+            glVertex3f(30, 40, 0);
+            glVertex3f(30, 60, 0);
+            glVertex3f(0, 60, 0);
+            glEnd();
+
+            //parte 4 de 4
+
+            glColor3f(0, 0, 0);
+            const unsigned char parte4[] = { "F" };
+            glRasterPos3f(7, 61, 0);
+            glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, parte4);
+
+            glBegin(GL_QUADS);
+            glColor3f(0.7, 0.0, 0.0);
+            glVertex3f(0, 60, 0);
+            glVertex3f(30, 60, 0);
+            glVertex3f(30, 80, 0);
+            glVertex3f(0, 80, 0);
+            glEnd();
+
+
+            glPopMatrix();
+        }
+    }
+};
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
     posicao_relativaY = translMapa + player_posY;
+    colisao();
     keyboard();
     desenhar();
     glFlush(); // executa o desenho
@@ -303,21 +393,17 @@ public:
             distanciaMapa = -400;
             
     }
-};
-
-static class Ilhas {
-public:
     static void Ilha1() {
         //ilha 2
         glPushMatrix();
-        glTranslatef(-150,1400,0);
-        
+        glTranslatef(-150, 1400, 0);
+
         glBegin(GL_QUADS);
         glColor3f(0, 0.8, 0);
-        glVertex3f(0,0,0);
-        glVertex3f(350,0,0);
-        glVertex3f(350,350,0);
-        glVertex3f(0, 350,0);
+        glVertex3f(0, 0, 0);
+        glVertex3f(350, 0, 0);
+        glVertex3f(350, 350, 0);
+        glVertex3f(0, 350, 0);
         glEnd();
 
         glPopMatrix();
@@ -330,10 +416,10 @@ public:
 
         glBegin(GL_QUADS);
         glColor3f(0, 0.8, 0);
-        glVertex3f(0,0,0);
-        glVertex3f(200,0,0);
-        glVertex3f(200,200,0);
-        glVertex3f(0,200,0);
+        glVertex3f(0, 0, 0);
+        glVertex3f(200, 0, 0);
+        glVertex3f(200, 200, 0);
+        glVertex3f(0, 200, 0);
         glEnd();
 
         glPopMatrix();
@@ -355,90 +441,7 @@ public:
         glPopMatrix();
 
     }
-   
 };
-
-//gasolina
-static class objeto{
-public:
-    static void GalaoGasolina() {
-
-        for (size_t i = 0; i < 10; i++){
-
-        
-        glPushMatrix();
-        glTranslatef(gasolinaVet[0][i], gasolinaVet[1][i], 0);
-
-        //parte 1 de 4
-        glColor3f(0, 0, 0);
-        const unsigned char parte1[] = { "L" };
-        glRasterPos3f(7, 1, 0);
-        glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, parte1);
-
-       
-        glBegin(GL_QUADS);
-        glColor3f(1.0, 1.0, 1.0);
-        glVertex3f(0, 0, 0);
-        glVertex3f(30, 0, 0);
-        glVertex3f(30, 20, 0);
-        glVertex3f(0, 20, 0);
-
-        glEnd();
-       
-
-        //parte 2 de 4
-        glColor3f(0, 0, 0);
-        const unsigned char parte2[] = { "E" };
-        glRasterPos3f(7, 21, 0);
-        glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, parte2);
-
-        glBegin(GL_QUADS);
-        glColor3f(0.7, 0.0, 0.0);
-        glVertex3f(0,20,0);
-        glVertex3f(30,20,0);
-        glVertex3f(30,40,0);
-        glVertex3f(0,40,0);
-
-       
-        glEnd();
-
-        //parte 3 de 4
-
-        glColor3f(0, 0, 0);
-        const unsigned char parte3[] = { "U" };
-        glRasterPos3f(7, 41, 0);
-        glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, parte3);
-
-        glBegin(GL_QUADS);
-        glColor3f(1.0, 1.0, 1.0);
-        glVertex3f(0,40,0);
-        glVertex3f(30,40,0);
-        glVertex3f(30,60,0);
-        glVertex3f(0,60,0);
-        glEnd();
-
-        //parte 4 de 4
-
-        glColor3f(0, 0, 0);
-        const unsigned char parte4[] = { "F" };
-        glRasterPos3f(7, 61, 0);
-        glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, parte4);
-
-        glBegin(GL_QUADS);
-        glColor3f(0.7, 0.0, 0.0);
-        glVertex3f(0,60,0);
-        glVertex3f(30,60,0);
-        glVertex3f(30,80,0);
-        glVertex3f(0,80,0);
-        glEnd();
-
-       
-        glPopMatrix();
-        }
-    }
-};
-
-
 bool teste=false;
  bool tirosValidar() {
     bool teste = true;
@@ -598,11 +601,10 @@ void desenhar() {
    translMapa += 1;
    glTranslatef(0, -translMapa, 0);
     Mapa::DesenharParede();
+    Mapa::Ilha1(); 
+    Mapa::Ilha3(); 
+    Mapa::Ilha3();
     objeto::GalaoGasolina();
-    Ilhas::Ilha1();
-    Ilhas::Ilha2();
-    Ilhas::Ilha3();
-   
     glPopMatrix();
  
 }
@@ -636,8 +638,15 @@ void keyboard()
             player_posY -= 1;
         }
     }
-    colisao();
     shoot = (GetAsyncKeyState(0x20) != 0) ? TRUE : FALSE;
 
     glutPostRedisplay();
+}
+void restart() {
+    translMapa = 0;
+    posicao_relativaY = 0;
+    player_posX = 0;
+    player_posY = 0;
+    paredeAtual = 0;
+    mod = 400;
 }
