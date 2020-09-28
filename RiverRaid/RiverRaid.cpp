@@ -1,26 +1,38 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <GL/glut.h>
+#include < GL/freeglut.h>
 #include <math.h>
 #include<iostream>
 
 #define janela_altura  800
 #define janela_largura 800
-float rotacao = 1,zoom = 1;;
-bool shoot = false;
-int t = 0, ciclo=0;
 
-float player_posX = 0, player_posY = 20, player_speed = 10, posicao_relativa=0;
-int translMapa = 0;
-int distanciaMapa = -400;
+int t = 0, animaHelice=0;
+//dimensões x de metade dos objetos- Inicio
+int tamPlayer = 18;
+int tamHelicoptero = 38;
+int tamNavio = 45;
+//fim dimensoes
+
+//Posicionamento
+float player_posX = 0, player_posY = 20;
+int translMapa = 0, posicao_relativaY = 0, distanciaMapa = -400, paredeAtual=0;
+//Fim Posicionamento
+
+// Larguras de Paredes laterais
 int x[10]{ 20, 100, 300, 150, 250, 100, 30, 300, 200, 350 };
+//Posição do tiro
 int xy_Shoot[2]= {0,0};
 bool rota = false;
+bool shoot = false;
+
 void reshape(GLsizei w, GLsizei h);
 void keyboard();
 void display(void);
 void desenhar();
 void colisao();
+const unsigned char tete[] = { "Marine" };
 
 class Inimigos {
 public:
@@ -33,6 +45,10 @@ public:
 
 
         //parte de baixo do barco
+        glColor3f(0, 0, 0);
+        glRasterPos3f(-20, 0, 0);
+        glutBitmapString(GLUT_BITMAP_HELVETICA_10,tete);
+
         glBegin(GL_POLYGON);
         glColor3f(0, 0.7, 0.9);
         glVertex2d(-31, -2);
@@ -131,21 +147,21 @@ public:
         glVertex2f(22, 26);
         glEnd();
 
-        ciclo++;
-        if (ciclo == 10) {
-            ciclo = -10;
+        animaHelice++;
+        if (animaHelice == 10) {
+            animaHelice = -10;
         }
 
         //primeira parte da helice 
         glBegin(GL_QUADS);
         glColor3f(1.0, 1.0, 0.5);
-        if (ciclo < 0) {
+        if (animaHelice < 0) {
             glVertex2f(14, 27);
             glVertex2f(38, 27);
             glVertex2f(38, 32);
             glVertex2f(14, 32);
         }
-        else if (ciclo > 0)
+        else if (animaHelice > 0)
         {
             glVertex2f(14, 23);
             glVertex2f(38, 23);
@@ -158,13 +174,13 @@ public:
         //segunda parte da helice 
         glBegin(GL_QUADS);
         glColor3f(1.0, 1.0, 0.5);
-        if (ciclo < 0) {
+        if (animaHelice < 0) {
             glVertex2f(22, 23);
             glVertex2f(-2, 23);
             glVertex2f(-2, 28);
             glVertex2f(22, 28);
         }
-        else if (ciclo > 0)
+        else if (animaHelice > 0)
         {
             glVertex2f(22, 27);
             glVertex2f(-2, 27);
@@ -193,7 +209,15 @@ int main(int argc, char** argv)
 }
 
 void colisao() {
-    posicao_relativa = translMapa + player_posY;
+    
+    ///Se a Posicao Atual do jogador alcançar a altura de troca de parede
+    if ((posicao_relativaY) % 400 == 0 && posicao_relativaY > 0) {
+        paredeAtual++;
+        printf("%i Parede", paredeAtual);
+    }
+    if ( true) {
+
+    }
 }
 void reshape(GLsizei w, GLsizei h)
 {
@@ -209,6 +233,7 @@ void reshape(GLsizei w, GLsizei h)
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
+    posicao_relativaY = translMapa + player_posY;
     keyboard();
     desenhar();
     glFlush(); // executa o desenho
@@ -266,7 +291,6 @@ bool teste=false;
     //Zera os tiros sumiram ou colidiram
   
         if (xy_Shoot[1] > janela_altura / 2) {
-            printf("ué");
             xy_Shoot[0] = 0;
             xy_Shoot[1] = 0;
             rota = false;
@@ -276,7 +300,6 @@ bool teste=false;
         if ((xy_Shoot[0] == 0) && (xy_Shoot[1] == 0)) {
             teste = false;
             rota = false;
-            printf("%i %i", xy_Shoot[1], xy_Shoot[0]);
         }
 
     return(teste);
@@ -311,7 +334,6 @@ public:
         glVertex3d(2, 15,0.0f);
         glVertex3d(2, -15,0.0f);
         glEnd();
-        printf("%d", translMapa);
 
         //asa direita inferior
 
@@ -402,7 +424,6 @@ public:
                         glVertex3f(-1.5, 10,0);
                         glVertex3f(-1.5, 0,0);
                         xy_Shoot[1]+=6;
-                        printf("%i",xy_Shoot[1]);
                     glEnd();
                     glPopMatrix();
             
@@ -453,10 +474,10 @@ void keyboard()
     }
     if (GetAsyncKeyState('S') != 0) {
         if (player_posY > -385) {
-            player_posY -= 2;
+            player_posY -= 1;
         }
     }
-    
+    colisao();
     shoot = (GetAsyncKeyState(0x20) != 0) ? TRUE : FALSE;
 
     glutPostRedisplay();
