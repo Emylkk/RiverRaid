@@ -4,6 +4,7 @@
 #include < GL/freeglut.h>
 #include <math.h>
 #include <thread>
+#include<ntddbeep.h>
 #include<iostream>
 
 #define janela_altura  800
@@ -12,25 +13,31 @@ const  int Y = 1;
 const int X = 0;
 //Variaveis de animação
 int t = 0, animaHelice = 0;
-
+bool dead = false;
+bool striked = false;
+bool refill = false;
 //Vetor de Inimigos
 int inimigosVet[2][20] = {
-	23,     -50,    220,    -220,       0,      50,      50,     150,    50,     -100,   0,     200,    -240,   0,      0,      0,      0,    -10,  -10,    0,
-	450,    1100,    1800,    1700,    2000,    2500,    3200,    6200,   6800,   7400,  500,   1700,   1800,   2700,   3000,   4000,   4100,  6300, 6800, 7000
+	23,     -50,    220,    -220,       0,      50,      50,     150,    50,     -100,   10,     200,    -240,   0,      0,      0,      0,    -10,  -10,    0,
+	450,    1100,    1800,    1700,    2000,    2500,    3200,    6200,   6800,   7400,  650,   1700,   1800,   2700,   3000,   4000,   4100,  6300, 6800, 7000
 };
 //Vetor de Combustiveis
 int gasolinaVet[2][8] = {
 	50	,0		,0		,0		,0		,0		,0		,0,
 	1100,2000	,3200	,4500	,5000	,6500	,7000	,7500
 };
-
+//Ilhas
+int ilhasYDim[2][3]{
+	1550,3300,5500,
+	175,100,200
+};
 //dimensões de metade dos objetos- Inicio
 int tamPlayerXY[2] = { 18,15 };
-int tamHelicopteroXY[2] = { 38, };
-int tamNavioXY[2] = { 45,1 };
+int tamHelicopteroXY[2] = { 38,18 };
+int tamNavioXY[2] = { 45,12 };
 
 //Posicionamento 
-int mod = 400, translMapa = 0, posicao_relativaY = 0, distanciaMapa = -400, paredeAtual = 0;
+int mod = 400, translMapa = 0, posicao_relativaY = 0, distanciaMapa = -400, paredeAtual = 0,posicao_relativaYshoot=0;
 //Posicionamento do Jogador 
 float player_posX = 0, player_posY = 20;
 
@@ -51,7 +58,7 @@ void restart();
 bool colisao();
 //Testes
 const unsigned char tete[] = { "Marine" };
-
+using namespace std;
 class Inimigos {
 public:
 	Inimigos();
@@ -70,35 +77,35 @@ public:
 
 			glBegin(GL_POLYGON);
 			glColor3f(0, 0.7, 0.9);
-			glVertex2d(-31, -2);
-			glVertex2d(22, -2);
-			glVertex2d(42, 4);
-			glVertex2d(-45, 4);
+			glVertex2d(-31, -15);
+			glVertex2d(22, -15);
+			glVertex2d(42, -9);
+			glVertex2d(-45, -9);
 			glEnd();
 
 			//parte do meio do barco 
 			glBegin(GL_POLYGON);
 			glColor3f(0.75, 0, 0);
-			glVertex2d(-42, 4);
-			glVertex2d(42, 4);
-			glVertex2d(42, 11);
-			glVertex2d(-45, 11);
+			glVertex2d(-42, -9);
+			glVertex2d(42, -9);
+			glVertex2d(42, -2);
+			glVertex2d(-45, -2);
 			glEnd();
 
 			//parte de cima do barco
 			glBegin(GL_QUADS);
 			glColor3f(0.0, 0.0, 0.0);
 			//parte inferior
-			glVertex2d(-23, 11);
-			glVertex2d(23, 11);
-			glVertex2d(23, 17);
-			glVertex2d(-23, 17);
+			glVertex2d(-23, -2);
+			glVertex2d(23, -2);
+			glVertex2d(23, 4);
+			glVertex2d(-23, 4);
 
 			//parte chamine
-			glVertex2d(-5, 11);
-			glVertex2d(15, 11);
-			glVertex2d(15, 25);
-			glVertex2d(-5, 25);
+			glVertex2d(-5, -2);
+			glVertex2d(15, -2);
+			glVertex2d(15, 12);
+			glVertex2d(-5, 12);
 			glEnd();
 
 			glPopMatrix();
@@ -118,51 +125,51 @@ public:
 			//base do heli
 			glBegin(GL_POLYGON);
 			glColor3f(0.0, 0.6, 0.0);
-			glVertex2d(20, 1);
-			glVertex2d(28, 4);
-			glVertex2d(7, 4);
-			glVertex2d(14, 1);
-			glVertex2d(10, -4);
-			glVertex2d(24, -4);
+			glVertex2d(20, -13);
+			glVertex2d(28, -10);
+			glVertex2d(7, -10);
+			glVertex2d(14, -13);
+			glVertex2d(10, -18);
+			glVertex2d(24, -18);
 			glEnd();
 
 			//parte de tras do heli
 			glBegin(GL_QUADS);
 			glColor3f(0.0, 0.5, 1.0);
-			glVertex2f(-22, 0);
-			glVertex2f(-30, 0);
-			glVertex2f(-30, 18);
-			glVertex2f(-22, 18);
+			glVertex2f(-22, -14);
+			glVertex2f(-30, -14);
+			glVertex2f(-30, 4);
+			glVertex2f(-22, 4);
 			glEnd();
 
 
 			//parte do meio do heli
 			glBegin(GL_QUADS);
 			glColor3f(0.0, 0.0, 0.4);
-			glVertex2f(30, 4);
-			glVertex2f(-30, 4);
-			glVertex2f(-30, 14);
-			glVertex2f(30, 14);
+			glVertex2f(30, -10);
+			glVertex2f(-30, -10);
+			glVertex2f(-30, 0);
+			glVertex2f(30, 0);
 			glEnd();
 
 
 			//teto do heli
 			glBegin(GL_QUADS);
 			glColor3f(0.0, 0.0, 0.3);
-			glVertex2f(30, 14);
-			glVertex2f(0, 14);
-			glVertex2f(0, 20);
-			glVertex2f(30, 20);
+			glVertex2f(30, 0);
+			glVertex2f(0, 0);
+			glVertex2f(0, 6);
+			glVertex2f(30, 6);
 
 			glEnd();
 
 			//pilar da helice 
 			glBegin(GL_QUADS);
 			glColor3f(1.0, 1.0, 0.5);
-			glVertex2f(22, 20);
-			glVertex2f(12, 20);
-			glVertex2f(12, 26);
-			glVertex2f(22, 26);
+			glVertex2f(22, 6);
+			glVertex2f(12, 6);
+			glVertex2f(12, 12);
+			glVertex2f(22, 12);
 			glEnd();
 
 			animaHelice++;
@@ -174,17 +181,17 @@ public:
 			glBegin(GL_QUADS);
 			glColor3f(1.0, 1.0, 0.5);
 			if (animaHelice < 0) {
-				glVertex2f(14, 27);
-				glVertex2f(38, 27);
-				glVertex2f(38, 32);
-				glVertex2f(14, 32);
+				glVertex2f(14, 13);
+				glVertex2f(38, 13);
+				glVertex2f(38, 18);
+				glVertex2f(14, 18);
 			}
 			else if (animaHelice > 0)
 			{
-				glVertex2f(14, 23);
-				glVertex2f(38, 23);
-				glVertex2f(38, 28);
-				glVertex2f(14, 28);
+				glVertex2f(14, 9);
+				glVertex2f(38, 9);
+				glVertex2f(38, 14);
+				glVertex2f(14, 14);
 			}
 
 			glEnd();
@@ -193,17 +200,17 @@ public:
 			glBegin(GL_QUADS);
 			glColor3f(1.0, 1.0, 0.5);
 			if (animaHelice < 0) {
-				glVertex2f(22, 23);
-				glVertex2f(-2, 23);
-				glVertex2f(-2, 28);
-				glVertex2f(22, 28);
+				glVertex2f(22, 9);
+				glVertex2f(-2, 9);
+				glVertex2f(-2, 14);
+				glVertex2f(22, 14);
 			}
 			else if (animaHelice > 0)
 			{
-				glVertex2f(22, 27);
-				glVertex2f(-2, 27);
-				glVertex2f(-2, 32);
-				glVertex2f(22, 32);
+				glVertex2f(22, 13);
+				glVertex2f(-2, 13);
+				glVertex2f(-2, 18);
+				glVertex2f(22, 18);
 			}
 			glEnd();
 
@@ -211,9 +218,31 @@ public:
 		}
 	}
 };
+void som() {
+	while (true) {
+		Sleep(10);
 
+		if (refill) {
+			for (size_t i = 10; i < 1000; i+=150)
+			{
+				Beep(i, 15);
+			}
+		}
+		if (dead) {
+			Beep(100, 300);
+
+		}
+		if (striked) {
+			Beep(BEEP_FREQUENCY_MINIMUM,30);
+			Beep(BEEP_FREQUENCY_MINIMUM,35);
+			Beep(BEEP_FREQUENCY_MINIMUM,85);
+		}
+	}
+}
 void  main(int argc, char** argv)
 {
+	thread ts(som);
+
 	glutInit(&argc, argv);  // controla se o sistema operacional tem suporte a janelas.
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);  // quantidade de buffer de cores e que o padrao de cores é RGB ou RGBA
 	glutInitWindowSize(janela_largura, janela_altura);  // tamanho da janela
@@ -223,26 +252,70 @@ void  main(int argc, char** argv)
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
 	glutMainLoop();
+	ts.join();
 }
 
 bool colisao() {
 
-	///Se a Posicao Atual do jogador alcançar a altura de troca de parede "razão de 6"
+	///Se a Posicao Atual do jogador alcançar a altura de troca de parede "limite de 6"
 	if ((((posicao_relativaY % mod >= 0) && (posicao_relativaY % mod <= 6)) && posicao_relativaY > 6)) {
 		paredeAtual++;
 		mod += 800;
 		printf("%i Parede", paredeAtual);
 	}
 	//paredes à esquerda
+
 	if (player_posX - tamPlayerXY[X] < (-x[paredeAtual])) {
-		Beep(100, 2000);
+		dead = true;
 		restart();
+
 	}
-		//Paredes à Direita
+	//Paredes à Direita
+
 	if (player_posX + tamPlayerXY[X] > (x[paredeAtual])) {
-		Beep(100, 2000);
+		dead = true;
 		restart();
 	}
+		for (size_t i = 0; i < 10; i++)
+		{
+			if ((posicao_relativaY+tamPlayerXY[Y] >= inimigosVet[Y][i] - tamNavioXY[Y]) && (posicao_relativaY-tamPlayerXY[Y] < inimigosVet[Y][i] + tamNavioXY[Y]) && (player_posX-tamPlayerXY[X] <= inimigosVet[X][i] + tamNavioXY[X]) && (player_posX+tamPlayerXY[X] >= inimigosVet[X][i] - tamNavioXY[X])) {
+				xy_Shoot[X] = 0;
+				xy_Shoot[Y] = 0;
+				restart();
+				dead = true;
+			}
+
+		}
+		for (size_t i = 10; i < 20; i++)
+		{
+			if ((posicao_relativaY + tamPlayerXY[Y] >= inimigosVet[Y][i] - tamHelicopteroXY[Y]) && (posicao_relativaY - tamPlayerXY[Y] < inimigosVet[Y][i] + tamHelicopteroXY[Y]) && (player_posX - tamPlayerXY[X] <= inimigosVet[X][i] + tamHelicopteroXY[X]) && (player_posX + tamPlayerXY[X] >= inimigosVet[X][i] - tamHelicopteroXY[X])) {
+				xy_Shoot[X] = 0;
+				xy_Shoot[Y] = 0;
+				restart();
+				dead = true;
+			}
+
+	}
+		for (size_t i = 0; i < 8; i++)
+		{
+			if ((posicao_relativaY + tamPlayerXY[Y] >= gasolinaVet[Y][i] - 15) && (posicao_relativaY - tamPlayerXY[Y] < gasolinaVet[Y][i] + 15) && (player_posX - tamPlayerXY[X] <= gasolinaVet[X][i] +15 ) && (player_posX + tamPlayerXY[X] >= gasolinaVet[X][i] - 15)) {
+				xy_Shoot[X] = 0;
+				xy_Shoot[Y] = 0;
+				gasolinaVet[Y][i] = -500;
+				refill = true;
+			}
+
+		}
+		for (size_t i = 0; i < 3; i++)
+		{
+			if ((posicao_relativaY + tamPlayerXY[Y] >= ilhasYDim[0][i] -ilhasYDim[1][i] ) && (posicao_relativaY - tamPlayerXY[Y] < ilhasYDim[0][i] + ilhasYDim[1][i]) && (player_posX - tamPlayerXY[X] <= 0 + ilhasYDim[1][i]) && (player_posX + tamPlayerXY[X] >= 0 - ilhasYDim[1][i])) {
+				xy_Shoot[X] = 0;
+				xy_Shoot[Y] = 0;
+				restart();
+				dead = true;
+			}
+
+		}
 	return(false);
 }
 
@@ -275,57 +348,58 @@ public:
 			//parte 1 de 4
 
 			glColor3f(0, 0, 0);
-			glRasterPos3f(7, 1, 0);
-			glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, parte1);
+			
+			glRasterPos3f(-7, -37, -1);
+			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, parte1);
 
 			glBegin(GL_QUADS);
 			glColor3f(1.0, 1.0, 1.0);
-			glVertex3f(0, 0, 0);
-			glVertex3f(30, 0, 0);
-			glVertex3f(30, 20, 0);
-			glVertex3f(0, 20, 0);
+			glVertex3f(-15, -40, 0);
+			glVertex3f(15, -40, 0);
+			glVertex3f(15, -20, 0);
+			glVertex3f(-15, -20, 0);
 			glEnd();
 
 			//parte 2 de 4
 
 			glColor3f(0, 0, 0);
-			glRasterPos3f(7, 21, 0);
-			glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, parte2);
+			glRasterPos3f(-7, -17, -1);
+			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, parte2);
 
 			glBegin(GL_QUADS);
 			glColor3f(0.7, 0.0, 0.0);
-			glVertex3f(0, 20, 0);
-			glVertex3f(30, 20, 0);
-			glVertex3f(30, 40, 0);
-			glVertex3f(0, 40, 0);
+			glVertex3f(-15,-20, 0);
+			glVertex3f(15,-20, 0);
+			glVertex3f(15,0, 0);
+			glVertex3f(-15,0, 0);
 			glEnd();
 
 			//parte 3 de 4
 
 			glColor3f(0, 0, 0);
-			glRasterPos3f(7, 41, 0);
-			glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, parte3);
+			glRasterPos3f(-7, 3, -1);
+			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, parte3);
 
 			glBegin(GL_QUADS);
 			glColor3f(1.0, 1.0, 1.0);
-			glVertex3f(0, 40, 0);
-			glVertex3f(30, 40, 0);
-			glVertex3f(30, 60, 0);
-			glVertex3f(0, 60, 0);
+			glVertex3f(-15, 0, 0);
+			glVertex3f(15, 0, 0);
+			glVertex3f(15, 20, 0);
+			glVertex3f(-15, 20, 0);
 			glEnd();
 
 			//parte 4 de 4
 
 			glColor3f(0, 0, 0);
-			glRasterPos3f(7, 61, 0);
-			glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, parte4);
+			glRasterPos3f(-7, 23, -1);
+			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, parte4);
 
 			glBegin(GL_QUADS);
 			glColor3f(0.7, 0.0, 0.0);
-			glVertex3f(0, 60, 0);
-			glVertex3f(30, 60, 0);
-			glVertex3f(30, 80, 0);
-			glVertex3f(0, 80, 0);
+			glVertex3f(-15, 20, 0);
+			glVertex3f(15, 20, 0);
+			glVertex3f(15, 40, 0);
+			glVertex3f(-15, 40, 0);
 			glEnd();
 			glPopMatrix();
 		}
@@ -341,6 +415,9 @@ void display() {
 	desenhar();
 	glFlush(); // executa o desenho
 	glutSwapBuffers();
+	dead = false;
+	striked = false;
+	refill = false;
 }
 
 static class Mapa {
@@ -350,7 +427,7 @@ public:
 		glTranslatef(0, -translMapa, 0);
 	}
 	static void desenharParede() {
-		
+
 		glPushMatrix();
 		//Parede Direita
 		Inimigos::desenharNavio();
@@ -391,14 +468,14 @@ public:
 	static void ilha1() {
 		//ilha 2
 		glPushMatrix();
-		glTranslatef(-150, 1400, 0);
+		glTranslatef(0, 1550, 0);
 
 		glBegin(GL_QUADS);
 		glColor3f(0, 0.8, 0);
-		glVertex3f(0, 0, 0);
-		glVertex3f(350, 0, 0);
-		glVertex3f(350, 350, 0);
-		glVertex3f(0, 350, 0);
+		glVertex3f(-175, -175, 0);
+		glVertex3f(175, -175, 0);
+		glVertex3f(175, 175, 0);
+		glVertex3f(-175, 175, 0);
 		glEnd();
 
 		glPopMatrix();
@@ -407,14 +484,14 @@ public:
 	//ilha 2
 	static void ilha2() {
 		glPushMatrix();
-		glTranslatef(-100, 3300, 0);
+		glTranslatef(0, 3300, 0);
 
 		glBegin(GL_QUADS);
-			glColor3f(0, 0.8, 0);
-			glVertex3f(0, 0, 0);
-			glVertex3f(200, 0, 0);
-			glVertex3f(200, 200, 0);
-			glVertex3f(0, 200, 0);
+		glColor3f(0, 0.8, 0);
+		glVertex3f(-100, 0, 0);
+		glVertex3f(100, 0, 0);
+		glVertex3f(100, 200, 0);
+		glVertex3f(-100, 200, 0);
 		glEnd();
 
 		glPopMatrix();
@@ -423,14 +500,14 @@ public:
 	//ilha 3
 	static void ilha3() {
 		glPushMatrix();
-		glTranslatef(-200, 5500, 0);
+		glTranslatef(0, 5500, 0);
 
 		glBegin(GL_QUADS);
-			glColor3f(0, 0.8, 0);
-			glVertex3f(0, 0, 0);
-			glVertex3f(400, 0, 0);
-			glVertex3f(400, 400, 0);
-			glVertex3f(0, 400, 0);
+		glColor3f(0, 0.8, 0);
+		glVertex3f(-200, 0, 0);
+		glVertex3f(200, 0, 0);
+		glVertex3f(200, 400, 0);
+		glVertex3f(-200, 400, 0);
 		glEnd();
 
 		glPopMatrix();
@@ -440,16 +517,57 @@ public:
 
 bool tirosValidar() {
 	bool teste = true;
-	//Zera os tiros que sumiram ou colidiram
+	if (xy_Shoot[X] > (x[paredeAtual])) {
+		xy_Shoot[X] = 0;
+		xy_Shoot[Y] = 0;
+		rota = false;
+		striked = true;
 
-	if (xy_Shoot[1] > janela_altura / 2) {
-		xy_Shoot[0] = 0;
-		xy_Shoot[1] = 0;
+	}
+	if (xy_Shoot[X] != 0 || xy_Shoot[Y] != 0) {
+		for (size_t i = 0; i < 10; i++)
+		{
+			if ((xy_Shoot[Y] + translMapa >= inimigosVet[Y][i] - tamNavioXY[Y]) && (xy_Shoot[Y] + translMapa < inimigosVet[Y][i] + tamNavioXY[Y]) && (xy_Shoot[X] <= inimigosVet[X][i] + tamNavioXY[X]) && (xy_Shoot[X] >= inimigosVet[X][i] - tamNavioXY[X])) {
+				xy_Shoot[X] = 0;
+				xy_Shoot[Y] = 0;
+				rota = false;
+				inimigosVet[Y][i] = -500;
+				striked = true;
+			}
+
+		}
+		for (size_t i = 10; i < 20; i++)
+		{
+			if ((xy_Shoot[Y] + translMapa >= inimigosVet[Y][i] - tamHelicopteroXY[Y]) && (xy_Shoot[Y] + translMapa < inimigosVet[Y][i] + tamHelicopteroXY[Y]) && (xy_Shoot[X] <= inimigosVet[X][i] + tamHelicopteroXY[X]) && (xy_Shoot[X] >= inimigosVet[X][i] - tamHelicopteroXY[X])) {
+				xy_Shoot[X] = 0;
+				xy_Shoot[Y] = 0;
+				rota = false;
+				inimigosVet[Y][i] = -500;
+				striked = true;
+			}
+
+		}
+		for (size_t i = 0; i < 3; i++)
+		{
+			if ((xy_Shoot[Y] + translMapa >= ilhasYDim[0][i] - ilhasYDim[1][i]) && (xy_Shoot[Y] + translMapa < ilhasYDim[0][i] + ilhasYDim[1][i]) && (xy_Shoot[X] <= 0 + ilhasYDim[1][i]) && (xy_Shoot[X] >= 0 - ilhasYDim[1][i] )) {
+				xy_Shoot[X] = 0;
+				xy_Shoot[Y] = 0;
+				rota = false;
+				inimigosVet[Y][i] = -500;
+				striked = true;
+			}
+
+		}
+	}
+	//Zera os tiros que sumiram ou colidiram
+	if (xy_Shoot[Y] > janela_altura / 2) {
+		xy_Shoot[X] = 0;
+		xy_Shoot[Y] = 0;
 		rota = false;
 
 	}
 	//testa se todos os tiros cessaram
-	if ((xy_Shoot[0] == 0) && (xy_Shoot[1] == 0)) {
+	if ((xy_Shoot[X] == 0) && (xy_Shoot[Y] == 0)) {
 		teste = false;
 		rota = false;
 	}
@@ -466,87 +584,87 @@ public:
 	static void desenharP1() {
 
 		glPushMatrix();//Matriz de movimentação
-			teste = tirosValidar();
+		teste = tirosValidar();
 
-			if (shoot or rota) {
+		if (shoot or rota) {
 
-				Jogador::desenharProjetil();
+			Jogador::desenharProjetil();
 
-			}
-			glTranslatef(player_posX, player_posY, 0);//realoca a matriz no plano
-			glPushMatrix();//Matriz de giro
+		}
+		glTranslatef(player_posX, player_posY, 0);//realoca a matriz no plano
+		glPushMatrix();//Matriz de giro
 
-				glRotatef(t, 0, 1, 0);
+		glRotatef(t, 0, 1, 0);
 
-				//centro do avião
-				glBegin(GL_POLYGON);
-					glColor3f(1, 1, 0.7);
-					glVertex3d(-2, -15, 0.0f);
-					glVertex3d(-2, 15, 0.0f);
-					glVertex3d(2, 15, 0.0f);
-					glVertex3d(2, -15, 0.0f);
-				glEnd();
+		//centro do avião
+		glBegin(GL_POLYGON);
+		glColor3f(1, 1, 0.7);
+		glVertex3d(-2, -15, 0.0f);
+		glVertex3d(-2, 15, 0.0f);
+		glVertex3d(2, 15, 0.0f);
+		glVertex3d(2, -15, 0.0f);
+		glEnd();
 
-				//asa direita inferior
+		//asa direita inferior
 
-				glBegin(GL_POLYGON);
-					if (t < 0) {
-						glColor3f(0.6, 0.6, 0.7);
-					}
-					else {
-						glColor3f(1, 1, 0.7);
+		glBegin(GL_POLYGON);
+		if (t < 0) {
+			glColor3f(0.6, 0.6, 0.7);
+		}
+		else {
+			glColor3f(1, 1, 0.7);
 
-					}
-					glVertex3f(2, -12, 0);
-					glVertex3f(6, -12, 0);
-					glVertex3f(6, -15, 0);
-					glVertex3f(10, -15, 0);
-					glVertex3f(10, -12, 0);
-					glVertex3f(6, -12, 0);
-					glVertex3f(6, -10, 0);
-					glVertex3f(2, -10, 0);
-				glEnd();
+		}
+		glVertex3f(2, -12, 0);
+		glVertex3f(6, -12, 0);
+		glVertex3f(6, -15, 0);
+		glVertex3f(10, -15, 0);
+		glVertex3f(10, -12, 0);
+		glVertex3f(6, -12, 0);
+		glVertex3f(6, -10, 0);
+		glVertex3f(2, -10, 0);
+		glEnd();
 
-				//asa direita superior 
-				glBegin(GL_POLYGON);
-					glVertex3f(2, 0, 0);
-					glVertex3f(18, -5, 0);
-					glVertex3f(14, 0, 0);
-					glVertex3f(2, 10, 0);
-					glVertex3f(2, 0, 0);
-				glEnd();
+		//asa direita superior 
+		glBegin(GL_POLYGON);
+		glVertex3f(2, 0, 0);
+		glVertex3f(18, -5, 0);
+		glVertex3f(14, 0, 0);
+		glVertex3f(2, 10, 0);
+		glVertex3f(2, 0, 0);
+		glEnd();
 
 
-				//asa esqueda inferior 
+		//asa esqueda inferior 
 
-				glBegin(GL_POLYGON);
-					if (t > 0) {
-						glColor3f(0.6, 0.6, 0.7);
+		glBegin(GL_POLYGON);
+		if (t > 0) {
+			glColor3f(0.6, 0.6, 0.7);
 
-					}
-					else {
-						glColor3f(1, 1, 0.7);
+		}
+		else {
+			glColor3f(1, 1, 0.7);
 
-					}
-					glVertex3f(-2, -12, 0);
-					glVertex3f(-6, -12, 0);
-					glVertex3f(-6, -15, 0);
-					glVertex3f(-10, -15, 0);
-					glVertex3f(-10, -12, 0);
-					glVertex3f(-6, -12, 0);
-					glVertex3f(-6, -10, 0);
-					glVertex3f(-2, -10, 0);
-				glEnd();
-				//asa esquerda superior 
-				glBegin(GL_POLYGON);
-					glVertex3f(-2, 0, 0);
-					glVertex3f(-18, -5, 0);
-					glVertex3f(-14, 0, 0);
-					glVertex3f(-2, 10, 0);
-					glVertex3f(-2, 0, 0);
-				glEnd();
-		
-			glPopMatrix();//matriz de giro
+		}
+		glVertex3f(-2, -12, 0);
+		glVertex3f(-6, -12, 0);
+		glVertex3f(-6, -15, 0);
+		glVertex3f(-10, -15, 0);
+		glVertex3f(-10, -12, 0);
+		glVertex3f(-6, -12, 0);
+		glVertex3f(-6, -10, 0);
+		glVertex3f(-2, -10, 0);
+		glEnd();
+		//asa esquerda superior 
+		glBegin(GL_POLYGON);
+		glVertex3f(-2, 0, 0);
+		glVertex3f(-18, -5, 0);
+		glVertex3f(-14, 0, 0);
+		glVertex3f(-2, 10, 0);
+		glVertex3f(-2, 0, 0);
+		glEnd();
+
+		glPopMatrix();//matriz de giro
 		glPopMatrix();
 
 
@@ -581,15 +699,15 @@ public:
 
 void desenhar() {
 	glPushMatrix();
-		glLoadIdentity();
-		glScalef(0.0025, 0.0025, 0.0025);
-		Jogador::desenharP1();
-		Mapa::translacaoVertical();
-		Mapa::desenharParede();
-		Mapa::ilha1();
-		Mapa::ilha3();
-		Mapa::ilha3();
-		objeto::galaoGasolina();
+	glLoadIdentity();
+	glScalef(0.0025, 0.0025, 0.0025);
+	Jogador::desenharP1();
+	Mapa::translacaoVertical();
+	Mapa::desenharParede();
+	Mapa::ilha1();
+	Mapa::ilha3();
+	Mapa::ilha3();
+	objeto::galaoGasolina();
 	glPopMatrix();
 
 }
