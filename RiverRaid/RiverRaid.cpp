@@ -1,18 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <GL/glut.h>
-#include < GL/freeglut.h>
+#include <GL/freeglut.h>
 #include <math.h>
 #include <thread>
 #include<ntddbeep.h>
 #include<iostream>
+#include<string>
 #include<locale>
 
 #define janela_altura  800
 #define janela_largura 800
 const  int Y = 1;
 const int X = 0;
-
+//pontos
+int pontuacao = 0;
+unsigned char pontos[20] = {"0"};
+int combustivel = 200;
 //Variaveis de animação
 int t = 0, animaHelice = 0;
 bool dead = false;
@@ -20,6 +24,10 @@ bool striked = false;
 bool refill = false;
 bool started = false;
 int girar=0;
+int animaexplosao=0;
+bool nimeexpl = false;
+int lastExplosion[2] = { 0,0 };
+
 //Vetor de Inimigos
 int inimigosVet[2][20] = {
 	23,     -50,    220,    -220,       0,      50,      50,     150,    50,     -100,   10,     200,    -240,   0,      0,      0,      0,    -10,  -10,    0,
@@ -96,6 +104,138 @@ class Inimigos {
 public:
 	Inimigos();
 	~Inimigos();
+	//explosao dos inimigos 
+	static void explosao(int x, int y) {
+		glPushMatrix();
+		glTranslatef(x, y, 0);
+
+		glBegin(GL_LINES);
+		if (!nimeexpl) {
+		lastExplosion[X] = x;
+		lastExplosion[Y] = y;
+	}
+		nimeexpl = true;
+		animaexplosao++;
+		if (animaexplosao == 20) {
+			animaexplosao = -10;
+			nimeexpl = false;
+		}
+		if (animaexplosao < 0) {
+			//explosao branca
+			glColor3f(1.0, 1.0, 1.0);
+			glVertex3f(-18, 10, 1);
+			glVertex3f(-14, 10, 1);
+
+			glVertex3f(-10, -10, 1);
+			glVertex3f(-6, -10, 1);
+
+			glVertex3f(-4, 0, 1);
+			glVertex3f(-0, 0, 1);
+
+			//explosao vermelho
+			glColor3f(1.0, 0.0, 0.0);
+			glVertex3f(-14, 9, 1);
+			glVertex3f(-10, 9, 1);
+
+			glVertex3f(18, -10, 1);
+			glVertex3f(14, -10, 1);
+
+			glVertex3f(18, 10, 1);
+			glVertex3f(14, 10, 1);
+
+			//explosa bege
+			glColor3f(1.0, 1.0, 0.3);
+			glVertex3f(-18, 0, 1);
+			glVertex3f(-14, 0, 1);
+
+			glVertex3f(-10, 5, 1);
+			glVertex3f(-6, 5, 1);
+
+			glVertex3f(4, -6, 1);
+			glVertex3f(8, -6, 1);
+
+		}
+		else if (animaexplosao > 0 && animaexplosao < 10)
+		{
+			//explosao branca
+			glColor3f(1.0, 1.0, 1.0);
+			glVertex3f(18, -10, 1);
+			glVertex3f(14, -10, 1);
+
+			glVertex3f(10, 10, 1);
+			glVertex3f(6, 10, 1);
+
+			glVertex3f(4, 0, 1);
+			glVertex3f(0, 0, 1);
+
+			//explosao vermelho
+			glColor3f(1.0, 0.0, 0.0);
+			glVertex3f(14, -9, 1);
+			glVertex3f(10, -9, 1);
+
+			glVertex3f(-18, 10, 1);
+			glVertex3f(-14, 10, 1);
+
+			glVertex3f(-18, -10, 1);
+			glVertex3f(-14, -10, 1);
+
+
+			//explosa bege
+			glColor3f(1.0, 1.0, 0.3);
+			glVertex3f(18, 0, 1);
+			glVertex3f(14, 0, 1);
+
+			glVertex3f(10, -5, 1);
+			glVertex3f(6, -5, 1);
+
+			glVertex3f(-4, 6, 1);
+			glVertex3f(-8, 6, 1);
+		}
+
+		else if (animaexplosao > 10)
+		{
+			//explosao branca
+			glColor3f(1.0, 1.0, 1.0);
+			glVertex3f(-18, 10, 1);
+			glVertex3f(-14, 10, 1);
+
+			glVertex3f(-10, -10, 1);
+			glVertex3f(-6, -10, 1);
+
+			glVertex3f(-4, 0, 1);
+			glVertex3f(-0, 0, 1);
+
+			//explosao vermelho
+			glColor3f(1.0, 0.0, 0.0);
+			glVertex3f(-14, 9, 1);
+			glVertex3f(-10, 9, 1);
+
+			glVertex3f(18, -10, 1);
+			glVertex3f(14, -10, 1);
+
+			glVertex3f(18, 10, 1);
+			glVertex3f(14, 10, 1);
+
+			//explosa bege
+			glColor3f(1.0, 1.0, 0.3);
+			glVertex3f(-18, 0, 1);
+			glVertex3f(-14, 0, 1);
+
+			glVertex3f(-10, 5, 1);
+			glVertex3f(-6, 5, 1);
+
+			glVertex3f(4, -6, 1);
+			glVertex3f(8, -6, 1);
+		}
+
+
+
+		glEnd();
+
+
+		glPopMatrix();
+
+	}
 	static void desenharNavio() {
 
 
@@ -300,6 +440,8 @@ bool colisao() {
 
 	if (player_posX - tamPlayerXY[X] < (-x[paredeAtual])) {
 		dead = true;
+		Inimigos::explosao(player_posX, posicao_relativaY);
+
 		restart();
 
 	}
@@ -307,7 +449,9 @@ bool colisao() {
 
 	if (player_posX + tamPlayerXY[X] > (x[paredeAtual])) {
 		dead = true;
+		Inimigos::explosao(player_posX, posicao_relativaY);
 		restart();
+
 	}
 	for (size_t i = 0; i < 10; i++)
 	{
@@ -368,7 +512,9 @@ void reshape(GLsizei w, GLsizei h)
 static class objeto {
 public:
 	static void galaoGasolina() {
-
+		if(nimeexpl){
+			Inimigos::explosao(lastExplosion[X],lastExplosion[Y]);
+		}
 		for (size_t i = 0; i < 8; i++) {
 			char parte1 = 'L';
 			char parte2 = 'E';
@@ -468,19 +614,41 @@ public:
 	static void desenharParede() {
 
 		glPushMatrix();
-		//Parede Direita
 		Inimigos::desenharNavio();
 		Inimigos::desenharHeli();
 		glBegin(GL_QUADS);
 		glColor3f(0, 0.8, 0);
 		for (size_t i = 0; i < 10; i++)
 		{
+			//Parede Direita
 			glVertex3f(x[i], distanciaMapa, 0);//esquerda abaixo
 			glVertex3f(x[i], distanciaMapa + 800, 0);//subir na esquerda ↑
 			glVertex3f(400, distanciaMapa + 800, 0);//direita acima
 			glVertex3f(400, distanciaMapa, 0);//direita ↓
+			//Parede Esquerda
+			glVertex3f(-x[i], distanciaMapa, 0);//esquerda abaixo
+			glVertex3f(-x[i], distanciaMapa + 800, 0);//subir na esquerda ↑
+			glVertex3f(-400, distanciaMapa + 800, 0);//direita acima
+			glVertex3f(-400, distanciaMapa, 0);//direita ↓
+
+			if (x[i] <= 30) {
+				//PonteDireita
+
+				glColor3f(.5, .5, .5);
+				glVertex3f(x[i], distanciaMapa+350, -1);//esquerda abaixo
+				glVertex3f(x[i], distanciaMapa + 450, -1);//subir na esquerda ↑
+				glVertex3f(400, distanciaMapa + 450, -1);//direita acima
+				glVertex3f(400, distanciaMapa+350, -1);//direita ↓
+							//Ponte Esquerda
+				glVertex3f(-x[i], distanciaMapa+350, -1);//esquerda abaixo
+				glVertex3f(-x[i], distanciaMapa + 450, -1);//subir na esquerda ↑
+				glVertex3f(-400, distanciaMapa + 450, -1);//direita acima
+				glVertex3f(-400, distanciaMapa+350, -1);//direita ↓
+			}
+			glColor3f(0, 0.8, 0);
 
 			distanciaMapa += 800;
+
 		}
 		distanciaMapa = -400;
 		glEnd();
@@ -491,10 +659,6 @@ public:
 
 		for (size_t i = 0; i < 10; i++)
 		{
-			glVertex3f(-x[i], distanciaMapa, 0);//esquerda abaixo
-			glVertex3f(-x[i], distanciaMapa + 800, 0);//subir na esquerda ↑
-			glVertex3f(-400, distanciaMapa + 800, 0);//direita acima
-			glVertex3f(-400, distanciaMapa, 0);//direita ↓
 
 			distanciaMapa += 800;
 		}
@@ -527,10 +691,10 @@ public:
 
 		glBegin(GL_QUADS);
 		glColor3f(0, 0.8, 0);
-		glVertex3f(-100, 0, 0);
-		glVertex3f(100, 0, 0);
-		glVertex3f(100, 200, 0);
-		glVertex3f(-100, 200, 0);
+		glVertex3f(-100, -100, 0);
+		glVertex3f(100, -100,0 );
+		glVertex3f(100, 100, 0);
+		glVertex3f(-100, 100, 0);
 		glEnd();
 
 		glPopMatrix();
@@ -543,10 +707,10 @@ public:
 
 		glBegin(GL_QUADS);
 		glColor3f(0, 0.8, 0);
-		glVertex3f(-200, 0, 0);
-		glVertex3f(200, 0, 0);
-		glVertex3f(200, 400, 0);
-		glVertex3f(-200, 400, 0);
+		glVertex3f(-200, -200, 0);
+		glVertex3f(200, -200, 0);
+		glVertex3f(200, 200, 0);
+		glVertex3f(-200, 200, 0);
 		glEnd();
 
 		glPopMatrix();
@@ -570,6 +734,7 @@ bool tirosValidar() {
 				xy_Shoot[X] = 0;
 				xy_Shoot[Y] = 0;
 				rota = false;
+				Inimigos::explosao(inimigosVet[X][i], inimigosVet[Y][i]);
 				inimigosVet[Y][i] = -500;
 				striked = true;
 			}
@@ -581,6 +746,7 @@ bool tirosValidar() {
 				xy_Shoot[X] = 0;
 				xy_Shoot[Y] = 0;
 				rota = false;
+				Inimigos::explosao(inimigosVet[X][i], inimigosVet[Y][i]);
 				inimigosVet[Y][i] = -500;
 				striked = true;
 			}
@@ -592,6 +758,7 @@ bool tirosValidar() {
 				xy_Shoot[X] = 0;
 				xy_Shoot[Y] = 0;
 				rota = false;
+				Inimigos::explosao(player_posX,posicao_relativaY);
 				inimigosVet[Y][i] = -500;
 				striked = true;
 			}
@@ -619,7 +786,32 @@ static class Jogador {
 	Jogador();
 	~Jogador();
 public:
+	static void hud() {
+		//Hud
+		glPushMatrix();
+		//Pontos
+			glPushMatrix();
+			glColor3f(0.8, 0.8, 1);
+			glRasterPos3i(-380, -350, -3);
+			glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24,pontos);
+			glBegin(GL_QUADS);
+			
+				glColor3f(0.4,0.4,0.4);
+				glVertex3f(-400,-300,-2);
+				glVertex3f(	400,-300,-2);
+				glVertex3f(	400,-400,-2);
+				glVertex3f(-400,-400,-2);
 
+			glEnd();
+			glPopMatrix();
+		//Gasolina
+			glPushMatrix();
+				glPushMatrix();
+
+				glPopMatrix();
+			glPopMatrix();
+		glPopMatrix();
+	}
 	static void desenharP1() {
 
 		glPushMatrix();//Matriz de movimentação
@@ -741,10 +933,11 @@ void desenhar() {
 	glLoadIdentity();
 	glScalef(0.0025, 0.0025, 0.0025);
 	Jogador::desenharP1();
+	Jogador::hud();
 	Mapa::translacaoVertical();
 	Mapa::desenharParede();
 	Mapa::ilha1();
-	Mapa::ilha3();
+	Mapa::ilha2();
 	Mapa::ilha3();
 	objeto::galaoGasolina();
 	glPopMatrix();
@@ -777,7 +970,7 @@ void keyboard()
 			t = 0;
 		}
 		if (GetAsyncKeyState('S') != 0) {
-			if (player_posY > -385) {
+			if (player_posY > -285) {
 				player_posY -= 1;
 			}
 		}
